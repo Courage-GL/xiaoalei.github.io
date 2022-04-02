@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Sip登录相关问题1.登录流程 2.登录、注销 3.登录状态 4.注销登录 5.网络切换 6.杀掉后再打开 7.放到后台再打开 8.sip心跳机制">
+<meta property="og:type" content="article">
+<meta property="og:title" content="1.SIP登录模块整理">
+<meta property="og:url" content="https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/index.html">
+<meta property="og:site_name" content="高小胖。🎈的个人博客">
+<meta property="og:description" content="Sip登录相关问题1.登录流程 2.登录、注销 3.登录状态 4.注销登录 5.网络切换 6.杀掉后再打开 7.放到后台再打开 8.sip心跳机制">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/sip_login.png">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/login_unlogin1.png">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/login_unlogin2.png">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/login_status.png">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/login_unlogin.png">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/network_change.png">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/kill_and_open.png">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/background_opne.png">
+<meta property="og:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/sip_beat.png">
+<meta property="article:published_time" content="2022-04-02T09:12:05.000Z">
+<meta property="article:modified_time" content="2022-04-02T09:25:55.342Z">
+<meta property="article:author" content="高小胖。🎈">
+<meta property="article:tag" content="高小胖">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://courage-gl.github.io/xiaoalei.github.io/images/sip_login.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/xiaoalei.github.io/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/xiaoalei.github.io/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/xiaoalei.github.io/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>1.SIP登录模块整理</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/xiaoalei.github.io/lib/font-awesome/css/font-awesome.min.css">
+
+    
+<link rel="stylesheet" href="/xiaoalei.github.io/lib/meslo-LG/styles.css">
+
+    
+<link rel="stylesheet" href="/xiaoalei.github.io/lib/justified-gallery/justifiedGallery.min.css">
+
+    
+<link rel="stylesheet" href="/xiaoalei.github.io/css/style.css">
+
+    <!-- rss -->
+    
+    
+    <!-- jquery -->
+    
+<script src="/xiaoalei.github.io/lib/jquery/jquery.min.js"></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+    <div class="banner">
+<div id="blogtitel" class="blogtitel">高小胖。🎈的个人博客</div>
+<ul id="wrapper" class="wrapper">
+  <div class="sun">
+    <div class="star"></div>
+  </div>
+  <div class="mercury">
+    <div class="planet">
+      <div class="shadow"></div>
+    </div>
+  </div>
+  <div class="venus">
+    <div class="planet">
+      <div class="shadow"></div>
+    </div>
+  </div>
+  <div class="earth">
+    <div class="planet"><div class="shadow"></div></div>
+  </div>
+  <div class="mars">
+    <div class="planet"><div class="shadow"></div></div>
+  </div>
+  <div class="jupiter">
+    <div class="planet"><div class="shadow"></div></div>
+  </div>
+</ul>
+</div>
+
+    <div class="background">
+      
+        <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/xiaoalei.github.io/index/">Home</a></li>
+         
+          <li><a href="/xiaoalei.github.io/archives/">Archives</a></li>
+         
+          <li><a href="/xiaoalei.github.io/about/">About</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/Courage-GL">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover='$("#i-top").toggle();' onmouseout='$("#i-top").toggle();'></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover='$("#i-share").toggle();' onmouseout='$("#i-share").toggle();' onclick='$("#share").toggle();return false;'></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&text=1.SIP登录模块整理"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&is_video=false&description=1.SIP登录模块整理"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=1.SIP登录模块整理&body=Check out this article: https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&name=1.SIP登录模块整理&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Sip%E7%99%BB%E5%BD%95%E7%9B%B8%E5%85%B3%E9%97%AE%E9%A2%98"><span class="toc-number">1.</span> <span class="toc-text">Sip登录相关问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E7%99%BB%E5%BD%95%E6%B5%81%E7%A8%8B"><span class="toc-number">1.0.0.1.</span> <span class="toc-text">1.登录流程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E7%99%BB%E5%BD%95%E3%80%81%E6%B3%A8%E9%94%80"><span class="toc-number">1.0.0.2.</span> <span class="toc-text">2.登录、注销</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E7%99%BB%E5%BD%95%E7%8A%B6%E6%80%81"><span class="toc-number">1.0.0.3.</span> <span class="toc-text">3.登录状态</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-%E6%B3%A8%E9%94%80%E7%99%BB%E5%BD%95"><span class="toc-number">1.0.0.4.</span> <span class="toc-text">4.注销登录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-%E7%BD%91%E7%BB%9C%E5%88%87%E6%8D%A2"><span class="toc-number">1.0.0.5.</span> <span class="toc-text">5.网络切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-%E6%9D%80%E6%8E%89%E5%90%8E%E5%86%8D%E6%89%93%E5%BC%80"><span class="toc-number">1.0.0.6.</span> <span class="toc-text">6.杀掉后再打开</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-%E6%94%BE%E5%88%B0%E5%90%8E%E5%8F%B0%E5%86%8D%E6%89%93%E5%BC%80"><span class="toc-number">1.0.0.7.</span> <span class="toc-text">7.放到后台再打开</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#8-sip%E5%BF%83%E8%B7%B3%E6%9C%BA%E5%88%B6"><span class="toc-number">1.0.0.8.</span> <span class="toc-text">8.sip心跳机制</span></a></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+      
+      <div class="content index width mx-auto px2 my4">
+          
+          <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        1.SIP登录模块整理
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">高小胖。🎈</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2022-04-02T09:12:05.000Z" itemprop="datePublished">2022-04-02</time>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Sip登录相关问题"><a href="#Sip登录相关问题" class="headerlink" title="Sip登录相关问题"></a>Sip登录相关问题</h1><h4 id="1-登录流程"><a href="#1-登录流程" class="headerlink" title="1.登录流程"></a>1.登录流程</h4><p><img src="/xiaoalei.github.io/images/sip_login.png"></p>
+<h4 id="2-登录、注销"><a href="#2-登录、注销" class="headerlink" title="2.登录、注销"></a>2.登录、注销</h4><p><img src="/xiaoalei.github.io/images/login_unlogin1.png"><br><img src="/xiaoalei.github.io/images/login_unlogin2.png"></p>
+<h4 id="3-登录状态"><a href="#3-登录状态" class="headerlink" title="3.登录状态"></a>3.登录状态</h4><p><img src="/xiaoalei.github.io/images/login_status.png"></p>
+<h4 id="4-注销登录"><a href="#4-注销登录" class="headerlink" title="4.注销登录"></a>4.注销登录</h4><p><img src="/xiaoalei.github.io/images/login_unlogin.png"></p>
+<h4 id="5-网络切换"><a href="#5-网络切换" class="headerlink" title="5.网络切换"></a>5.网络切换</h4><p><img src="/xiaoalei.github.io/images/network_change.png"></p>
+<h4 id="6-杀掉后再打开"><a href="#6-杀掉后再打开" class="headerlink" title="6.杀掉后再打开"></a>6.杀掉后再打开</h4><p><img src="/xiaoalei.github.io/images/kill_and_open.png"></p>
+<h4 id="7-放到后台再打开"><a href="#7-放到后台再打开" class="headerlink" title="7.放到后台再打开"></a>7.放到后台再打开</h4><p><img src="/xiaoalei.github.io/images/background_opne.png"></p>
+<h4 id="8-sip心跳机制"><a href="#8-sip心跳机制" class="headerlink" title="8.sip心跳机制"></a>8.sip心跳机制</h4><p><img src="/xiaoalei.github.io/images/sip_beat.png"></p>
+
+  </div>
+</article>
+
+
+
+      </div>
+      
+       <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/xiaoalei.github.io/index/">Home</a></li>
+         
+          <li><a href="/xiaoalei.github.io/archives/">Archives</a></li>
+         
+          <li><a href="/xiaoalei.github.io/about/">About</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/Courage-GL">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Sip%E7%99%BB%E5%BD%95%E7%9B%B8%E5%85%B3%E9%97%AE%E9%A2%98"><span class="toc-number">1.</span> <span class="toc-text">Sip登录相关问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E7%99%BB%E5%BD%95%E6%B5%81%E7%A8%8B"><span class="toc-number">1.0.0.1.</span> <span class="toc-text">1.登录流程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E7%99%BB%E5%BD%95%E3%80%81%E6%B3%A8%E9%94%80"><span class="toc-number">1.0.0.2.</span> <span class="toc-text">2.登录、注销</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E7%99%BB%E5%BD%95%E7%8A%B6%E6%80%81"><span class="toc-number">1.0.0.3.</span> <span class="toc-text">3.登录状态</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-%E6%B3%A8%E9%94%80%E7%99%BB%E5%BD%95"><span class="toc-number">1.0.0.4.</span> <span class="toc-text">4.注销登录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-%E7%BD%91%E7%BB%9C%E5%88%87%E6%8D%A2"><span class="toc-number">1.0.0.5.</span> <span class="toc-text">5.网络切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-%E6%9D%80%E6%8E%89%E5%90%8E%E5%86%8D%E6%89%93%E5%BC%80"><span class="toc-number">1.0.0.6.</span> <span class="toc-text">6.杀掉后再打开</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-%E6%94%BE%E5%88%B0%E5%90%8E%E5%8F%B0%E5%86%8D%E6%89%93%E5%BC%80"><span class="toc-number">1.0.0.7.</span> <span class="toc-text">7.放到后台再打开</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#8-sip%E5%BF%83%E8%B7%B3%E6%9C%BA%E5%88%B6"><span class="toc-number">1.0.0.8.</span> <span class="toc-text">8.sip心跳机制</span></a></li></ol></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&text=1.SIP登录模块整理"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&is_video=false&description=1.SIP登录模块整理"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=1.SIP登录模块整理&body=Check out this article: https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&title=1.SIP登录模块整理"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://courage-gl.github.io/xiaoalei.github.io/2022/04/02/1.SIP%E7%99%BB%E5%BD%95%E6%A8%A1%E5%9D%97%E6%95%B4%E7%90%86/&name=1.SIP登录模块整理&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick='$("#toc-footer").toggle();return false;'><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick='$("#share-footer").toggle();return false;'><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick='$("#nav-footer").toggle();return false;'><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+      
+      <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2022 高小胖。🎈
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/xiaoalei.github.io/index/">Home</a></li>
+         
+          <li><a href="/xiaoalei.github.io/archives/">Archives</a></li>
+         
+          <li><a href="/xiaoalei.github.io/about/">About</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/Courage-GL">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+      
+<script src="/xiaoalei.github.io/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/xiaoalei.github.io/js/main.js"></script>
+
+<!-- Google Analytics -->
+
+<!-- Disqus Comments -->
+
+
+    </div>
+</body>
+</html>
